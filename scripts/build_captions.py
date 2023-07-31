@@ -116,9 +116,10 @@ def _max(scores):
 
 def _score_image(model, processor, texts, img):
     inputs = processor(text=texts, images=img, return_tensors="pt", padding=True)
+    inputs = inputs.to("cuda")
     outputs = model(**inputs)
     logits_per_image = outputs.logits_per_image
-    scores = logits_per_image.detach().numpy()[0]
+    scores = logits_per_image.cpu().detach().numpy()[0]
     return dict(zip(texts, scores))
 
 
@@ -135,7 +136,8 @@ def _build_caption(model, processor, img, max_phrases):
         scores = _score_image(
             model,
             processor,
-            [cur] + [cur + ", " + t for t in phrases.keys() if t not in landforms],
+            [cur]
+            + [cur + ", " + p for p, ti in phrases.items() if ti not in landforms],
             img,
         )
         best = _max(scores)
@@ -172,9 +174,9 @@ def _process_load(meta_fn, q, apply_meta_filter, skip_list):
 
 
 def _process(q, max_phrases, caption_path, clip_model):
-    model = CLIPModel.from_pretrained(clip_model)
+    model = CLIPModel.from_pretrained(clip_model).to("cuda")
     processor = CLIPProcessor.from_pretrained(clip_model)
-    with open(caption_path, "w") as f:
+    with open(caption_path, "a") as f:
         while not q.empty():
             meta_fn = q.get()
             img_fn = meta_fn.replace(".json", ".rgb.png")
