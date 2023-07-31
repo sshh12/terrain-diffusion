@@ -122,10 +122,10 @@ def _count_stitch_lines(image_path):
     return len(lines) if lines is not None else 0
 
 
-def process(fn, out_path, scale, subdivision):
+def _process(fn, rgb_path, scale, subdivision):
     depth_key = os.path.split(fn)[1].split("_")[1]
 
-    mark_path = os.path.join(out_path, f"{depth_key}.success")
+    mark_path = os.path.join(rgb_path, f"{depth_key}.success")
     if os.path.exists(mark_path):
         print(f"Skipping {fn}")
         return
@@ -134,10 +134,10 @@ def process(fn, out_path, scale, subdivision):
     regions = _regions_from_depth(fn, subdivision)
     for i, (region, depth) in enumerate(regions):
         key = f"{depth_key}-{i}_{subdivision*subdivision}"
-        rgb_path = os.path.join(out_path, f"{key}.rgb.png")
-        depth_path = os.path.join(out_path, f"{key}.depth.npy")
-        depth_icon_path = os.path.join(out_path, f"{key}.depth.png")
-        meta_path = os.path.join(out_path, f"{key}.json")
+        rgb_path = os.path.join(rgb_path, f"{key}.rgb.png")
+        depth_path = os.path.join(rgb_path, f"{key}.depth.npy")
+        depth_icon_path = os.path.join(rgb_path, f"{key}.depth.png")
+        meta_path = os.path.join(rgb_path, f"{key}.json")
 
         depth_icon = Image.fromarray((depth / (depth.max() + 1) * 255).astype(np.uint8))
         depth_icon.resize(DEPTH_ICON_SIZE, Image.Resampling.LANCZOS).save(
@@ -157,7 +157,9 @@ def process(fn, out_path, scale, subdivision):
             depth_min=int(depth.min()),
             depth_pct_zero=int((depth < 0.01).mean() * 100),
             rgb_stitch_lines=_count_stitch_lines(rgb_path),
-            rgb_pct_zero=int(np.array(rgb).any(axis=-1).mean() * 100),
+            rgb_pct_zero=int(
+                np.array(rgb).any(axis=-1).mean() * 100
+            ),  # oops this is inverted
         )
         with open(meta_path, "w") as f:
             json.dump(meta, f)
@@ -166,11 +168,11 @@ def process(fn, out_path, scale, subdivision):
         f.write("1")
 
 
-def main(workers, depth_path, out_path, scale, subdivision):
+def main(workers, depth_path, rgb_path, scale, subdivision):
     ee.Initialize()
-    os.makedirs(out_path, exist_ok=True)
+    os.makedirs(rgb_path, exist_ok=True)
 
-    func = partial(process, out_path=out_path, scale=scale, subdivision=subdivision)
+    func = partial(_process, rgb_path=rgb_path, scale=scale, subdivision=subdivision)
 
     fn_iter = glob.iglob(os.path.join(depth_path, "**", "*.tif"), recursive=True)
 
@@ -181,9 +183,9 @@ def main(workers, depth_path, out_path, scale, subdivision):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--depth_path", type=str)
-    parser.add_argument("--out_path", type=str)
+    parser.add_argument("--rgb_path", type=str)
     parser.add_argument("--scale", type=int)
     parser.add_argument("--subdivision", type=int)
     parser.add_argument("--workers", type=int, default=10)
     args = parser.parse_args()
-    main(args.workers, args.depth_path, args.out_path, args.scale, args.subdivision)
+    main(args.workers, args.depth_path, args.rgb_path, args.scale, args.subdivision)

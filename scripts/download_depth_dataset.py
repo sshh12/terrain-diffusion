@@ -7,13 +7,14 @@ By accessing data via OpenTopography you agree to acknowledge OpenTopography and
 https://opentopography.org/citations
 """
 
-S3_COMMAND = "aws s3 sync s3://raster/AW3D30/ {out_path} --endpoint-url https://opentopography.s3.sdsc.edu --no-sign-request"
+S3_COMMAND = "aws s3 sync s3://raster/AW3D30/ {depth_path} --endpoint-url https://opentopography.s3.sdsc.edu --no-sign-request"
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--out_path", type=str)
+    parser.add_argument("--depth_path", type=str)
     args = parser.parse_args()
     print(NOTICE)
-    cmd = S3_COMMAND.format(out_path=args.out_path)
+    cmd = S3_COMMAND.format(depth_path=args.depth_path)
     print("$", cmd)
     os.system(cmd)
