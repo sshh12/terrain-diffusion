@@ -186,6 +186,6 @@ if __name__ == "__main__":
     parser.add_argument("--rgb_path", type=str)
     parser.add_argument("--scale", type=int)
     parser.add_argument("--subdivision", type=int)
-    parser.add_argument("--workers", type=int, default=10)
+    parser.add_argument("--workers", type=int, default=20)
     args = parser.parse_args()
     main(args.workers, args.depth_path, args.rgb_path, args.scale, args.subdivision)

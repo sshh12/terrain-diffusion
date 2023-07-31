@@ -177,7 +177,7 @@ def _process(q, max_phrases, caption_path, clip_model):
     model = CLIPModel.from_pretrained(clip_model).to("cuda")
     processor = CLIPProcessor.from_pretrained(clip_model)
     with open(caption_path, "a") as f:
-        while not q.empty():
+        while True:
             meta_fn = q.get()
             img_fn = meta_fn.replace(".json", ".rgb.png")
             img = Image.open(img_fn)
