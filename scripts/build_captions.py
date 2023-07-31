@@ -47,6 +47,7 @@ HIGH_LEVEL_LANDFORM = [
     "plain",
     "atoll",
     "steppe",
+    "city",
 ]
 LANDFORM_ITEMS = [
     "islands",
@@ -61,7 +62,6 @@ LANDFORM_ITEMS = [
     "volcanoes",
     "glaciers",
     "rainforests",
-    "coral reefs",
     "sand dunes",
     "swamps",
     "tundras",
@@ -94,7 +94,6 @@ LANDFORM_ITEMS = [
     "clouds",
     "agricultural fields",
     "towns",
-    "villages",
 ]
 
 COUNT_PHRASES = ["a few", "several", "some", "full of"]
@@ -148,17 +147,28 @@ def _build_caption(model, processor, img, max_phrases):
     return cur
 
 
-def _process_load(meta_fn, q):
-    with open(meta_fn, "r") as f:
-        meta = json.load(f)
-    # prefilter
-    if (
-        meta["rgb_pct_zero"] > 90
-        and meta["rgb_stitch_lines"] == 0
-        and "caption" not in meta
-    ):
-        print(f"Adding {meta_fn}")
+def _get_existing_paths(caption_path):
+    if not os.path.exists(caption_path):
+        return set()
+    else:
+        with open(caption_path, "r") as f:
+            return set(json.loads(line)["meta_fn"] for line in f)
+
+
+def _process_load(meta_fn, q, apply_meta_filter, skip_list):
+    if meta_fn in skip_list:
+        print(f"Skipping {meta_fn}")
+        return
+    elif not apply_meta_filter:
         q.put(meta_fn)
+        return
+    else:
+        with open(meta_fn, "r") as f:
+            meta = json.load(f)
+        # prefilter
+        if meta["rgb_pct_zero"] > 90 and meta["rgb_stitch_lines"] == 0:
+            print(f"Adding {meta_fn}")
+            q.put(meta_fn)
 
 
 def _process(q, max_phrases, caption_path, clip_model):
@@ -171,12 +181,16 @@ def _process(q, max_phrases, caption_path, clip_model):
             img = Image.open(img_fn)
             caption = _build_caption(model, processor, img, max_phrases)
             print("Built Caption", img_fn, caption)
-            f.write(json.dumps({"fn": img_fn, "caption": caption}) + "\n")
+            f.write(
+                json.dumps({"meta_fn": meta_fn, "rgb_fn": img_fn, "caption": caption})
+                + "\n"
+            )
             f.flush()
 
 
-def main(workers, rgb_path, caption_path, max_phrases, clip_model):
+def main(workers, rgb_path, caption_path, apply_meta_filter, max_phrases, clip_model):
     fn_iter = glob.iglob(os.path.join(rgb_path, "*.json"))
+    skip_list = _get_existing_paths(caption_path)
 
     q = queue.Queue(1000)
 
@@ -186,7 +200,15 @@ def main(workers, rgb_path, caption_path, max_phrases, clip_model):
     thread.start()
 
     with ThreadPoolExecutor(max_workers=workers) as executor:
-        executor.map(partial(_process_load, q=q), fn_iter)
+        executor.map(
+            partial(
+                _process_load,
+                q=q,
+                apply_meta_filter=apply_meta_filter,
+                skip_list=skip_list,
+            ),
+            fn_iter,
+        )
 
     thread.join()
 
@@ -197,6 +219,7 @@ if __name__ == "__main__":
     parser.add_argument("--caption_path", type=str)
     parser.add_argument("--workers", type=int, default=5)
     parser.add_argument("--max_phrases", type=int, default=5)
+    parser.add_argument("--apply_meta_filter", type=bool, default=True)
     parser.add_argument(
         "--clip_model", type=str, default="openai/clip-vit-large-patch14"
     )
@@ -206,6 +229,7 @@ if __name__ == "__main__":
         args.workers,
         args.rgb_path,
         args.caption_path,
+        args.apply_meta_filter,
         args.max_phrases,
         args.clip_model,
     )
