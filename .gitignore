@@ -166,3 +166,4 @@ env.bat
 test.txt
 test.ipynb
 *.jsonl
+logs/
