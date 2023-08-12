@@ -167,3 +167,4 @@ test.txt
 test.ipynb
 *.jsonl
 logs/
+wandb/
