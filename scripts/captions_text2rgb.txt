@@ -3,6 +3,7 @@ a satellite image of a desert
 a satellite image of a rocky desert
 a satellite image of an island
 a satellite image of a mountain range
+a satellite image of a snowy mountain range
 a satellite image of a canyon
 a satellite image of a forest
 a satellite image of a rainforest
@@ -25,3 +26,7 @@ a satellite image of a plateau
 a satellite image of a glacier
 a satellite image of an ice cap
 a satellite image of clouds
+a satellite image of a savanna
+a satellite image of a steppe
+a satellite image of a taiga
+a satellite image of a moorland
