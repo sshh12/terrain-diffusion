@@ -8,7 +8,7 @@ Training code adapted from Diffusers (http://www.apache.org/licenses/LICENSE-2.0
 Masking code adapted from github.com/justinpinkney/stable-diffusion (MIT)
  * https://github.com/justinpinkney/stable-diffusion/blob/main/ldm/data/inpainting/synthetic_mask.py
 
-Example Usage:
+Example Usage (9GB VRAM, tested 3090 Ti):
 $ accelerate launch train_text_to_image_lora_sd2_inpaint.py \
   --pretrained_model_name_or_path="stabilityai/stable-diffusion-2-inpainting" \
   --dataset_name="sshh12/sentinel-2-rgb-captioned" \
