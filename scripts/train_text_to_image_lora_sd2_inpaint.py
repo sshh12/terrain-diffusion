@@ -91,6 +91,7 @@ MASK_SETTINGS = {
         "min_s_box": None,
         "max_s_box": None,
         "marg": None,
+        "p_drop": 0.0,
     },
     "256train": {
         "p_irr": 0.5,
@@ -103,6 +104,7 @@ MASK_SETTINGS = {
         "min_s_box": 30,
         "max_s_box": 150,
         "marg": 10,
+        "p_drop": 0.0,
     },
     "512train": {
         "p_irr": 0.5,
@@ -115,6 +117,7 @@ MASK_SETTINGS = {
         "min_s_box": 30,
         "max_s_box": 300,
         "marg": 10,
+        "p_drop": 0.0,
     },
     "512train-large": {
         "p_irr": 0.5,
@@ -127,6 +130,7 @@ MASK_SETTINGS = {
         "min_s_box": 75,
         "max_s_box": 450,
         "marg": 10,
+        "p_drop": 0.0,
     },
     "512train-very-large": {
         "p_irr": 0.5,
@@ -139,6 +143,7 @@ MASK_SETTINGS = {
         "min_s_box": 100,
         "max_s_box": 512,
         "marg": 10,
+        "p_drop": 0.3,
     },
 }
 
@@ -186,6 +191,7 @@ def gen_large_mask(
     max_n_box,
     min_s_box,
     max_s_box,
+    p_drop,
 ):
     """
     img_h: int, an image height
@@ -205,6 +211,9 @@ def gen_large_mask(
     """
 
     mask = np.zeros((img_h, img_w))
+    if prng.choice(2, p=[1 - p_drop, p_drop]):
+        # completely full mask
+        return np.ones_like(mask)
 
     def uniform(a, b):
         if a >= b:
